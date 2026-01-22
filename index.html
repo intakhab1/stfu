@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STFU - Tap to Shut Them Up</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #000000; 
+            color: #ffffff;
+            font-family: sans-serif;
+            text-align: center;
+            /* prevent text selection on double tap*/
+            -webkit-user-select: none; 
+            user-select: none;
+        }
+
+        .emoji {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin: 0;
+            letter-spacing: 2px;
+            font-weight: bold;
+        }
+
+        #tapArea {
+            margin-top: 1rem;
+            font-size: 1.2rem;
+            color: #888888; 
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        #tapArea:hover {
+            color: #ffffff; 
+        }
+
+        #tapArea.active {
+            color: #2ecc71; 
+            cursor: default;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="emoji">🤫</div>
+    <h1>STFU</h1>
+    <p id="tapArea">tap to shut them up</p>
+
+    <script>
+        let audioCtx;
+        let stream;
+        let source;
+        let delayNode;
+        let isActive = false;
+
+        const tapArea = document.getElementById('tapArea');
+
+        tapArea.addEventListener('click', async () => {
+            if (isActive) return; // tracks if the app is currently running so we dont start it twice
+
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                } else if (audioCtx.state === 'suspended') {
+                    await audioCtx.resume();
+                }
+
+                // mic access
+                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                
+                source = audioCtx.createMediaStreamSource(stream);
+                delayNode = audioCtx.createDelay(2.0); // max delay buffer
+
+                // delay of 1sec
+                delayNode.delayTime.value = 1.0; 
+
+                source.connect(delayNode);
+                delayNode.connect(audioCtx.destination);
+
+                isActive = true;
+                tapArea.textContent = "listening & repeating";
+                tapArea.classList.add('active');
+
+            } catch (err) {
+                console.error('error accessing mic:', err);
+                alert('could not access mic. ');
+            }
+        });
+    </script>
+</body>
+</html>
